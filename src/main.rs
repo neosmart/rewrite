@@ -10,7 +10,7 @@ use std::io;
 
 fn print_usage(program: &str, opts: Options) {
     let path = PathBuf::from(program);
-    let command = path.file_name().unwrap().to_str().unwrap();
+    let command = path.file_name().unwrap().to_string_lossy();
 
     let brief = format!("Usage: {} FILE [options]", command);
     let info = "Safely rewrite contents of FILE with stdin, even\nwhere FILE is being read by \
