@@ -9,7 +9,9 @@ use std::io;
 
 fn print_usage(program: &str, opts: Options) {
     let brief = format!("Usage: {} FILE [options]", program);
-    print!("{}", opts.usage(&brief));
+	let info = "Safely rewrite contents of FILE with stdin, even\n\
+	where FILE is being read by upstream command";
+    print!("{}", opts.usage(&[&brief, info].join("\n")));
 }
 
 fn redirect_to_file(outfile: &str) -> Result<(), io::Error> {
