@@ -21,7 +21,7 @@ fn print_usage(program: &str, opts: Options) {
 fn redirect_to_file(outfile: &str) -> Result<(), io::Error> {
     let mut tempfile = env::temp_dir();
     tempfile.push(Uuid::new_v4().hyphenated().to_string());
-    //println!("{}", tempfile.display());
+    // println!("{}", tempfile.display());
 
     {
         let mut buffer = [0; 512];
@@ -46,8 +46,8 @@ fn redirect_to_file(outfile: &str) -> Result<(), io::Error> {
     match std::fs::rename(&tempfile, &outfile) {
         Ok(m) => m,
         _ => {
-            //fs::rename does not support cross-device linking
-            //copy and delete instead
+            // fs::rename does not support cross-device linking
+            // copy and delete instead
             assert!(std::fs::copy(&tempfile, &outfile).is_ok());
             assert!(std::fs::remove_file(&tempfile).is_ok());
         }
