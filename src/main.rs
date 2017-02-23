@@ -1,6 +1,7 @@
 use std::env;
 use std::io::prelude::*;
 use std::fs::File;
+use std::path::PathBuf;
 extern crate uuid;
 use uuid::Uuid;
 extern crate getopts;
@@ -8,9 +9,12 @@ use getopts::Options;
 use std::io;
 
 fn print_usage(program: &str, opts: Options) {
-    let brief = format!("Usage: {} FILE [options]", program);
-	let info = "Safely rewrite contents of FILE with stdin, even\n\
-	where FILE is being read by upstream command";
+    let path = PathBuf::from(program);
+    let command = path.file_name().unwrap().to_str().unwrap();
+
+    let brief = format!("Usage: {} FILE [options]", command);
+    let info = "Safely rewrite contents of FILE with stdin, even\nwhere FILE is being read by \
+                upstream command";
     print!("{}", opts.usage(&[&brief, info].join("\n")));
 }
 
