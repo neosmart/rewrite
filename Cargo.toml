@@ -1,0 +1,8 @@
+[package]
+name = "rewrite"
+version = "0.1.0"
+authors = ["Mahmoud Al-Qudsi <mqudsi@neosmart.net>"]
+
+[dependencies]
+uuid = { version = "0.3", features = ["v4"] }
+getopts = "0.2"
