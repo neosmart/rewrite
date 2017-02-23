@@ -28,24 +28,24 @@ fn redirect_to_file(outfile: &str) -> Result<(), io::Error> {
                 break;
             }
 
-            let write_bytes = match f.write(&buffer[0 .. read_bytes]) {
-				Ok(m) => { m }
-				Err(e) => panic!("{}", e)
-			};
+            let write_bytes = match f.write(&buffer[0..read_bytes]) {
+                Ok(m) => m,
+                Err(e) => panic!("{}", e),
+            };
 
-			assert!(write_bytes == read_bytes);
+            assert!(write_bytes == read_bytes);
         }
     }
 
     match std::fs::rename(&tempfile, &outfile) {
-		Ok(m) => { m }
-		_ => {
-			//fs::rename does not support cross-device linking
-			//copy and delete instead
-			assert!(std::fs::copy(&tempfile, &outfile).is_ok());
-			assert!(std::fs::remove_file(&tempfile).is_ok());
-		}
-	};
+        Ok(m) => m,
+        _ => {
+            //fs::rename does not support cross-device linking
+            //copy and delete instead
+            assert!(std::fs::copy(&tempfile, &outfile).is_ok());
+            assert!(std::fs::remove_file(&tempfile).is_ok());
+        }
+    };
 
     return Ok(());
 }
