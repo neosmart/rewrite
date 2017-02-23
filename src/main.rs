@@ -26,10 +26,10 @@ fn redirect_to_file(outfile: &str) -> Result<(), io::Error> {
     {
         let mut buffer = [0; 512];
         let mut stdin = io::stdin();
-        let mut f = File::create(&tempfile).unwrap();
+        let mut f = File::create(&tempfile).expect("Failed to create output file!");
 
         loop {
-            let read_bytes = stdin.read(&mut buffer).unwrap();
+            let read_bytes = stdin.read(&mut buffer).expect("Error reading from stdin!");
             if read_bytes == 0 {
                 break;
             }
