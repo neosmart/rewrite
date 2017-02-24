@@ -26,7 +26,7 @@ fn redirect_to_file(outfile: &str) -> Result<(), io::Error> {
     {
         let mut buffer = [0; 512];
         let mut stdin = io::stdin();
-        let mut f = File::create(&tempfile).expect("Failed to create output file!");
+        let mut f = File::create(&tempfile).expect("Failed to create temporary file!");
 
         loop {
             let read_bytes = stdin.read(&mut buffer).expect("Error reading from stdin!");
@@ -34,10 +34,8 @@ fn redirect_to_file(outfile: &str) -> Result<(), io::Error> {
                 break;
             }
 
-            let write_bytes = match f.write(&buffer[0..read_bytes]) {
-                Ok(m) => m,
-                Err(e) => panic!("{}", e),
-            };
+            let write_bytes = f.write(&buffer[0..read_bytes])
+                .expect("Failed to write to temporary file!");
 
             assert!(write_bytes == read_bytes);
         }
@@ -48,8 +46,9 @@ fn redirect_to_file(outfile: &str) -> Result<(), io::Error> {
         _ => {
             // fs::rename does not support cross-device linking
             // copy and delete instead
-            assert!(std::fs::copy(&tempfile, &outfile).is_ok());
-            assert!(std::fs::remove_file(&tempfile).is_ok());
+            std::fs::copy(&tempfile, &outfile).expect("Failed to create output file!");
+            std::fs::remove_file(&tempfile)
+                .unwrap_or_else(|e| print!("Failed to delete temporary file!\n{:?}", e));
         }
     };
 
