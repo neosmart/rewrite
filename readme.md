@@ -26,14 +26,16 @@ We can easily sort this list with the `sort` utility, but what happens when we t
 sort words.txt > words.txt #don't do this!
 ```
 
-This will result in a complete loss of data, as sort does not pre-load the entire contents of the file argument in memory before sorting and writing the output (thank god, or else you'd never be able to sort anything larger than a few MB without thrashing your system memory). So we end up doing something like this:
+This will result in a complete loss of data, as the shell will set up the output file handle before `sort` gets a chance to open the same file to read it. In the end, you get neither this nor that and lose all data in the process! 
+
+Here's what you would normally do instead:
 
 ```
 sort words.txt > temp
 mv temp words.txt
 ```
 
-Which is easy & straightforward enough, except when `sort` is part of a bigger workflow or a script, or when you forget, or when you don't have as straightforward of a case and don't realize that your source and destination files are one and the same. `rewrite` to the rescue!
+Which is easy & straightforward enough, except when `sort` is part of a bigger workflow or a script, or when you forget, or when `temp` already exists, or when you don't have as straightforward of a case and don't realize that your source and destination files are one and the same. `rewrite` to the rescue!
 
 Here's how simple using `rewrite` here would be:
 
