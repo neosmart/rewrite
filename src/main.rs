@@ -19,7 +19,10 @@ fn print_usage(program: &str, opts: Options) {
 }
 
 fn redirect_to_file(outfile: &str) -> Result<(), io::Error> {
-    let mut tempfile = env::temp_dir();
+    // create the temporary file in the same directory as outfile
+    // this lets us guarantee a rename (instead of a move) on completion
+    let mut tempfile = PathBuf::from(outfile);
+    tempfile.pop(); //now refers to parent, which might be nothing
     tempfile.push(Uuid::new_v4().hyphenated().to_string());
     // println!("{}", tempfile.display());
 
