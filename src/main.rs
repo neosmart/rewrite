@@ -8,17 +8,30 @@ extern crate getopts;
 use getopts::Options;
 use std::io;
 
-fn print_usage(program: &str, opts: Options) {
+macro_rules! exit_with_exception {
+	($error:ident, $extra:tt) => {
+		let _ = write!(&mut std::io::stderr(), "{}\n", $extra);
+		let _ = write!(&mut std::io::stderr(), "{}\n", $error);
+		std::process::exit(-1);
+	};
+}
+
+fn print_usage(program: &str, opts: Options, include_info: bool) {
     let path = PathBuf::from(program);
     let command = path.file_name().unwrap().to_string_lossy();
 
     let brief = format!("Usage: {} FILE [options]", command);
-    let info = "Safely rewrite contents of FILE with stdin, even\nwhere FILE is being read by \
+    let info = "Safely rewrite contents of FILE with stdin, even where FILE is being read by \
                 upstream command";
-    print!("{}", opts.usage(&[&brief, info].join("\n")));
+    let full = &[&brief, info];
+    if include_info {
+        print!("{}", opts.usage(&full.join("\n")));
+    } else {
+        print!("{}", opts.usage(&brief));
+    }
 }
 
-fn redirect_to_file(outfile: &str) -> Result<(), io::Error> {
+fn redirect_to_file(outfile: &str) -> Result<(), &str> {
     // create the temporary file in the same directory as outfile
     // this lets us guarantee a rename (instead of a move) on completion
     let mut tempfile = PathBuf::from(outfile);
@@ -29,31 +42,36 @@ fn redirect_to_file(outfile: &str) -> Result<(), io::Error> {
     {
         let mut buffer = [0; 512];
         let mut stdin = io::stdin();
-        let mut f = File::create(&tempfile).expect("Failed to create temporary file!");
+        let mut f = File::create(&tempfile).unwrap_or_else(|e| {
+            exit_with_exception!(e, "Failed to create output file!");
+        });
 
         loop {
-            let read_bytes = stdin.read(&mut buffer).expect("Error reading from stdin!");
+            let read_bytes = stdin.read(&mut buffer).unwrap_or_else(|e| {
+                exit_with_exception!(e, "Error reading from stdin!");
+            });
             if read_bytes == 0 {
                 break;
             }
 
-            let write_bytes = f.write(&buffer[0..read_bytes])
-                .expect("Failed to write to temporary file!");
+            let write_bytes = f.write(&buffer[0..read_bytes]).unwrap_or_else(|e| {
+                exit_with_exception!(e, "Failed to write to temporary file!");
+            });
 
             assert!(write_bytes == read_bytes);
         }
     }
 
-    match std::fs::rename(&tempfile, &outfile) {
-        Ok(m) => m,
-        _ => {
-            // fs::rename does not support cross-device linking
-            // copy and delete instead
-            std::fs::copy(&tempfile, &outfile).expect("Failed to create output file!");
-            std::fs::remove_file(&tempfile)
-                .unwrap_or_else(|e| print!("Failed to delete temporary file!\n{:?}", e));
-        }
-    };
+    std::fs::rename(&tempfile, &outfile).unwrap_or_else(|_x| {
+        // fs::rename does not support cross-device linking
+        // copy and delete instead
+        std::fs::copy(&tempfile, &outfile).unwrap_or_else(|e| {
+            exit_with_exception!(e, "Failed to create output file!");
+        });
+        std::fs::remove_file(&tempfile).unwrap_or_else(|e| {
+            exit_with_exception!(e, "Failed to delete temporary file!");
+        });
+    });
 
     return Ok(());
 }
@@ -65,16 +83,20 @@ fn main() {
     opts.optflag("h", "help", "prints this help info");
     let matches = match opts.parse(&args[1..]) {
         Ok(m) => m,
-        Err(f) => panic!(f.to_string()),
+        Err(e) => {
+            print!("{}\n", e);
+            print_usage(&program, opts, false);
+            return;
+        }
     };
     if matches.opt_present("h") {
-        print_usage(&program, opts);
+        print_usage(&program, opts, true);
         return;
     }
     let infile = if !matches.free.is_empty() {
         matches.free[0].clone()
     } else {
-        print_usage(&program, opts);
+        print_usage(&program, opts, true);
         return;
     };
 
