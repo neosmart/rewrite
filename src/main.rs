@@ -16,19 +16,22 @@ macro_rules! exit_with_exception {
 	};
 }
 
-fn print_usage(program: &str, opts: Options, include_info: bool) {
+fn print_usage(program: &str, opts: Options, include_info: bool, include_copyright: bool) {
     let path = PathBuf::from(program);
     let command = path.file_name().unwrap().to_string_lossy();
 
+    let copyright = "rewrite 0.2 by NeoSmart Technologies. Written by Mahmoud Al-Qudsi <mqudsi@neosmart.net>";
     let brief = format!("Usage: {} FILE [options]", command);
     let info = "Safely rewrite contents of FILE with stdin, even where FILE is being read by \
                 upstream command";
-    let full = &[&brief, info];
-    if include_info {
-        print!("{}", opts.usage(&full.join("\n")));
-    } else {
-        print!("{}", opts.usage(&brief));
+
+    if include_copyright {
+        println!("{}", copyright);
     }
+    if include_info {
+        println!("{}", info);
+    }
+    print!("{}", opts.usage(&brief));
 }
 
 fn redirect_to_file(outfile: &str) -> Result<(), &str> {
@@ -85,18 +88,18 @@ fn main() {
         Ok(m) => m,
         Err(e) => {
             print!("{}\n", e);
-            print_usage(&program, opts, false);
+            print_usage(&program, opts, false, false);
             return;
         }
     };
     if matches.opt_present("h") {
-        print_usage(&program, opts, true);
+        print_usage(&program, opts, true, true);
         return;
     }
     let infile = if !matches.free.is_empty() {
         matches.free[0].clone()
     } else {
-        print_usage(&program, opts, true);
+        print_usage(&program, opts, true, false);
         return;
     };
 
