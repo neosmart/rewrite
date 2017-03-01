@@ -43,7 +43,7 @@ fn redirect_to_file(outfile: &str) -> Result<(), &str> {
         let mut buffer = [0; 512];
         let mut stdin = io::stdin();
         let mut f = File::create(&tempfile).unwrap_or_else(|e| {
-            exit_with_exception!(e, "Failed to create output file!");
+            exit_with_exception!(e, "Failed to create temporary output file!");
         });
 
         loop {
@@ -55,7 +55,7 @@ fn redirect_to_file(outfile: &str) -> Result<(), &str> {
             }
 
             let write_bytes = f.write(&buffer[0..read_bytes]).unwrap_or_else(|e| {
-                exit_with_exception!(e, "Failed to write to temporary file!");
+                exit_with_exception!(e, "Failed to write to temporary output file!");
             });
 
             assert!(write_bytes == read_bytes);
@@ -69,7 +69,7 @@ fn redirect_to_file(outfile: &str) -> Result<(), &str> {
             exit_with_exception!(e, "Failed to create output file!");
         });
         std::fs::remove_file(&tempfile).unwrap_or_else(|e| {
-            exit_with_exception!(e, "Failed to delete temporary file!");
+            exit_with_exception!(e, "Failed to delete temporary output file!");
         });
     });
 
