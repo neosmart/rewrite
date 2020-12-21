@@ -10,8 +10,10 @@ use std::io;
 
 macro_rules! exit_with_exception {
     ($error:ident, $extra:tt) => {
-        let _ = write!(&mut std::io::stderr(), "{}\n", $extra);
-        let _ = write!(&mut std::io::stderr(), "{}\n", $error);
+        let stderr = std::io::stderr();
+        let mut stderr = stderr.lock();
+        let _ = write!(&mut stderr, "{}\n", $extra);
+        let _ = write!(&mut stderr, "{}\n", $error);
         std::process::exit(-1);
     };
 }
@@ -45,7 +47,8 @@ fn redirect_to_file(outfile: &str) {
 
     {
         let mut buffer = [0; 512];
-        let mut stdin = io::stdin();
+        let stdin = io::stdin();
+        let mut stdin = stdin.lock();
         let mut f = File::create(&tempfile).unwrap_or_else(|e| {
             exit_with_exception!(e, "Failed to create temporary output file!");
         });
