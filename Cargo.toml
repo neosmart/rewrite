@@ -13,4 +13,4 @@ edition = "2018"
 
 [dependencies]
 uuid = { version = "0.3", features = ["v4"] }
-getopts = "0.2"
+getopts = "0.2.21"
