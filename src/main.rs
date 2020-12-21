@@ -34,11 +34,11 @@ fn print_usage(program: &str, opts: Options, include_info: bool, include_copyrig
     print!("{}", opts.usage(&brief));
 }
 
-fn redirect_to_file(outfile: &str) -> Result<(), &str> {
-    // create the temporary file in the same directory as outfile
-    // this lets us guarantee a rename (instead of a move) on completion
+fn redirect_to_file(outfile: &str) {
+    // Create the temporary file in the same directory as outfile this lets us guarantee a rename
+    // (instead of a move) on completion
     let mut tempfile = PathBuf::from(outfile);
-    tempfile.pop(); //now refers to parent, which might be nothing
+    tempfile.pop(); // Now refers to parent, which might be nothing
     tempfile.push(Uuid::new_v4().hyphenated().to_string());
     // println!("{}", tempfile.display());
 
@@ -61,13 +61,13 @@ fn redirect_to_file(outfile: &str) -> Result<(), &str> {
                 exit_with_exception!(e, "Failed to write to temporary output file!");
             });
 
-            assert!(write_bytes == read_bytes);
+            debug_assert!(write_bytes == read_bytes);
         }
     }
 
     std::fs::rename(&tempfile, &outfile).unwrap_or_else(|_x| {
-        // fs::rename does not support cross-device linking
-        // copy and delete instead
+        // fs::rename() does not support cross-device linking.
+        // Copy and delete instead.
         std::fs::copy(&tempfile, &outfile).unwrap_or_else(|e| {
             exit_with_exception!(e, "Failed to create output file!");
         });
@@ -75,8 +75,6 @@ fn redirect_to_file(outfile: &str) -> Result<(), &str> {
             exit_with_exception!(e, "Failed to delete temporary output file!");
         });
     });
-
-    return Ok(());
 }
 
 fn main() {
@@ -87,7 +85,7 @@ fn main() {
     let matches = match opts.parse(&args[1..]) {
         Ok(m) => m,
         Err(e) => {
-            print!("{}\n", e);
+            println!("{}", e);
             print_usage(&program, opts, false, false);
             return;
         }
@@ -103,5 +101,5 @@ fn main() {
         return;
     };
 
-    assert!(redirect_to_file(&infile).is_ok());
+    redirect_to_file(&infile);
 }
