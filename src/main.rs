@@ -1,21 +1,18 @@
+use getopts::Options;
 use std::env;
 use std::fs::File;
-use std::io::prelude::*;
+use std::io::{Read, Write};
 use std::path::PathBuf;
-extern crate uuid;
 use uuid::Uuid;
-extern crate getopts;
-use getopts::Options;
-use std::io;
 
-macro_rules! exit_with_exception {
-    ($error:ident, $extra:tt) => {
+macro_rules! except {
+    ($error:ident, $extra:tt) => {{
         let stderr = std::io::stderr();
         let mut stderr = stderr.lock();
         let _ = write!(&mut stderr, "{}\n", $extra);
         let _ = write!(&mut stderr, "{}\n", $error);
         std::process::exit(-1);
-    };
+    }};
 }
 
 fn print_usage(program: &str, opts: Options, include_info: bool, include_copyright: bool) {
@@ -43,40 +40,38 @@ fn redirect_to_file(outfile: &str) {
     let mut tempfile = PathBuf::from(outfile);
     tempfile.pop(); // Now refers to parent, which might be nothing
     tempfile.push(Uuid::new_v4().hyphenated().to_string());
-    // println!("{}", tempfile.display());
 
     {
         let mut buffer = [0; 512];
-        let stdin = io::stdin();
+        let stdin = std::io::stdin();
         let mut stdin = stdin.lock();
         let mut f = File::create(&tempfile).unwrap_or_else(|e| {
-            exit_with_exception!(e, "Failed to create temporary output file!");
+            except!(e, "Failed to create temporary output file!");
         });
 
         loop {
-            let read_bytes = stdin.read(&mut buffer).unwrap_or_else(|e| {
-                exit_with_exception!(e, "Error reading from stdin!");
-            });
-            if read_bytes == 0 {
-                break;
-            }
+            let bytes_read = match stdin.read(&mut buffer) {
+                Ok(0) => break,
+                Ok(n) => n,
+                Err(e) => except!(e, "Error reading from stdin!"),
+            };
 
-            f.write_all(&buffer[0..read_bytes]).unwrap_or_else(|e| {
-                exit_with_exception!(e, "Failed to write to temporary output file!");
-            });
+            if let Err(e) = f.write_all(&buffer[0..bytes_read]) {
+                except!(e, "Failed to write to temporary output file!");
+            };
         }
     }
 
-    std::fs::rename(&tempfile, &outfile).unwrap_or_else(|_x| {
+    if std::fs::rename(&tempfile, &outfile).is_err() {
         // fs::rename() does not support cross-device linking.
         // Copy and delete instead.
         std::fs::copy(&tempfile, &outfile).unwrap_or_else(|e| {
-            exit_with_exception!(e, "Failed to create output file!");
+            except!(e, "Failed to create output file!");
         });
         std::fs::remove_file(&tempfile).unwrap_or_else(|e| {
-            exit_with_exception!(e, "Failed to delete temporary output file!");
+            except!(e, "Failed to delete temporary output file!");
         });
-    });
+    }
 }
 
 fn main() {
@@ -99,12 +94,11 @@ fn main() {
         return;
     }
 
-    let infile = if !matches.free.is_empty() {
-        matches.free[0].clone()
-    } else {
+    if matches.free.is_empty() {
         print_usage(&program, opts, true, false);
         return;
-    };
+    }
 
-    redirect_to_file(&infile);
+    let infile = &matches.free[0];
+    redirect_to_file(infile);
 }

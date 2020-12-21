@@ -9,6 +9,7 @@ readme = "readme.md"
 keywords = ["rewrite", "redirect", "in-place"]
 categories = ["command-line-utilities", "text-processing", "os"]
 license = "MIT"
+edition = "2018"
 
 [dependencies]
 uuid = { version = "0.3", features = ["v4"] }
