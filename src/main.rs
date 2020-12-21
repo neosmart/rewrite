@@ -1,6 +1,6 @@
 use std::env;
-use std::io::prelude::*;
 use std::fs::File;
+use std::io::prelude::*;
 use std::path::PathBuf;
 extern crate uuid;
 use uuid::Uuid;
@@ -9,18 +9,19 @@ use getopts::Options;
 use std::io;
 
 macro_rules! exit_with_exception {
-	($error:ident, $extra:tt) => {
-		let _ = write!(&mut std::io::stderr(), "{}\n", $extra);
-		let _ = write!(&mut std::io::stderr(), "{}\n", $error);
-		std::process::exit(-1);
-	};
+    ($error:ident, $extra:tt) => {
+        let _ = write!(&mut std::io::stderr(), "{}\n", $extra);
+        let _ = write!(&mut std::io::stderr(), "{}\n", $error);
+        std::process::exit(-1);
+    };
 }
 
 fn print_usage(program: &str, opts: Options, include_info: bool, include_copyright: bool) {
     let path = PathBuf::from(program);
     let command = path.file_name().unwrap().to_string_lossy();
 
-    let copyright = "rewrite 0.2 by NeoSmart Technologies. Written by Mahmoud Al-Qudsi <mqudsi@neosmart.net>";
+    let copyright =
+        "rewrite 0.2 by NeoSmart Technologies. Written by Mahmoud Al-Qudsi <mqudsi@neosmart.net>";
     let brief = format!("Usage: {} FILE [options]", command);
     let info = "Safely rewrite contents of FILE with stdin, even where FILE is being read by \
                 upstream command";
@@ -78,8 +79,9 @@ fn redirect_to_file(outfile: &str) {
 }
 
 fn main() {
-    let args: Vec<String> = env::args().collect();
-    let program = args[0].clone();
+    let args: Vec<_> = env::args().collect();
+    let program = &args[0];
+
     let mut opts = Options::new();
     opts.optflag("h", "help", "prints this help info");
     let matches = match opts.parse(&args[1..]) {
@@ -90,10 +92,12 @@ fn main() {
             return;
         }
     };
+
     if matches.opt_present("h") {
         print_usage(&program, opts, true, true);
         return;
     }
+
     let infile = if !matches.free.is_empty() {
         matches.free[0].clone()
     } else {
