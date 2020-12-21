@@ -58,11 +58,9 @@ fn redirect_to_file(outfile: &str) {
                 break;
             }
 
-            let write_bytes = f.write(&buffer[0..read_bytes]).unwrap_or_else(|e| {
+            f.write_all(&buffer[0..read_bytes]).unwrap_or_else(|e| {
                 exit_with_exception!(e, "Failed to write to temporary output file!");
             });
-
-            debug_assert!(write_bytes == read_bytes);
         }
     }
 
