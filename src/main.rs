@@ -2,8 +2,7 @@ use getopts::Options;
 use std::env;
 use std::fs::File;
 use std::io::{Read, Write};
-use std::path::PathBuf;
-use uuid::Uuid;
+use std::path::{Path, PathBuf};
 
 macro_rules! except {
     ($error:ident, $extra:tt) => {{
@@ -15,9 +14,30 @@ macro_rules! except {
     }};
 }
 
+fn get_temp_dest(path: &Path) -> PathBuf {
+    let old_name = path.file_name().expect("Received path to directory instead of file!");
+    let mut new_name = std::ffi::OsString::new();
+    new_name.push(".");
+    new_name.push(old_name);
+
+    // Freeze its current value, because it'll serve as a template
+    let new_name = new_name;
+
+    // Handle cases where the temp file exists
+    let mut num = 0;
+    let mut new_path = path.with_file_name(&new_name);
+    while new_path.exists() {
+        num += 1;
+        let mut new_name = new_name.clone();
+        new_name.push(format!("-{}", num));
+        new_path = path.with_file_name(new_name);
+    }
+
+    return new_path;
+}
+
 fn print_usage(program: &str, opts: Options, include_info: bool, include_copyright: bool) {
-    let path = PathBuf::from(program);
-    let command = path.file_name().unwrap().to_string_lossy();
+    let command = program.rsplit(&['/', '\\'] as &[char]).next().unwrap_or(program);
 
     let copyright =
         "rewrite 0.2 by NeoSmart Technologies. Written by Mahmoud Al-Qudsi <mqudsi@neosmart.net>";
@@ -35,11 +55,10 @@ fn print_usage(program: &str, opts: Options, include_info: bool, include_copyrig
 }
 
 fn redirect_to_file(outfile: &str) {
-    // Create the temporary file in the same directory as outfile this lets us guarantee a rename
-    // (instead of a move) on completion
-    let mut tempfile = PathBuf::from(outfile);
-    tempfile.pop(); // Now refers to parent, which might be nothing
-    tempfile.push(Uuid::new_v4().hyphenated().to_string());
+    // Create the temporary file in the same directory as outfile. This lets us guarantee a rename
+    // (instead of a move) upon completion where possible.
+    let src = Path::new(outfile);
+    let tempfile = get_temp_dest(src);
 
     {
         let mut buffer = [0; 512];
