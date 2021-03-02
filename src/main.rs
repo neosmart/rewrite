@@ -1,6 +1,7 @@
 use getopts::Options;
 use std::env;
 use std::fs::File;
+use std::ffi::OsStr;
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 
@@ -36,12 +37,13 @@ fn get_temp_dest(path: &Path) -> PathBuf {
     return new_path;
 }
 
-fn print_usage(program: &str, opts: Options, include_info: bool, include_copyright: bool) {
-    let command = program.rsplit(&['/', '\\'] as &[char]).next().unwrap_or(program);
+fn print_usage(program: &OsStr, opts: Options, include_info: bool, include_copyright: bool) {
+    let program = Path::new(program);
+    let command = program.file_name().map(Path::new).unwrap_or(program);
 
     let copyright =
         "rewrite 0.2 by NeoSmart Technologies. Written by Mahmoud Al-Qudsi <mqudsi@neosmart.net>";
-    let brief = format!("Usage: {} FILE [options]", command);
+    let brief = format!("Usage: {} FILE [options]", command.display());
     let info = "Safely rewrite contents of FILE with stdin, even where FILE is being read by \
                 upstream command";
 
@@ -94,7 +96,7 @@ fn redirect_to_file(outfile: &str) {
 }
 
 fn main() {
-    let args: Vec<_> = env::args().collect();
+    let args: Vec<_> = env::args_os().collect();
     let program = &args[0];
 
     let mut opts = Options::new();
