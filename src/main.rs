@@ -1,5 +1,5 @@
-use getopts::Options;
 use std::env;
+use std::ffi::OsStr;
 use std::fs::File;
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
@@ -15,7 +15,9 @@ macro_rules! except {
 }
 
 fn get_temp_dest(path: &Path) -> PathBuf {
-    let old_name = path.file_name().expect("Received path to directory instead of file!");
+    let old_name = path
+        .file_name()
+        .expect("Received path to directory instead of file!");
     let mut new_name = std::ffi::OsString::new();
     new_name.push(".");
     new_name.push(old_name);
@@ -36,25 +38,32 @@ fn get_temp_dest(path: &Path) -> PathBuf {
     return new_path;
 }
 
-fn print_usage(program: &str, opts: Options, include_info: bool, include_copyright: bool) {
-    let command = program.rsplit(&['/', '\\'] as &[char]).next().unwrap_or(program);
+fn help<W: std::io::Write>(output: &mut W, verbose: bool) {
+    let _ = writeln!(output, "Usage: rewrite [options] FILE");
+    let _ = writeln!(
+        output,
+        "Safely rewrite contents of FILE with stdin, even where FILE \
+        is being read by upstream command"
+    );
 
-    let copyright =
-        "rewrite 0.2 by NeoSmart Technologies. Written by Mahmoud Al-Qudsi <mqudsi@neosmart.net>";
-    let brief = format!("Usage: {} FILE [options]", command);
-    let info = "Safely rewrite contents of FILE with stdin, even where FILE is being read by \
-                upstream command";
-
-    if include_copyright {
-        println!("{}", copyright);
+    if verbose {
+        let _ = writeln!(output, "");
+        let _ = writeln!(output, "Options:");
+        let _ = writeln!(output, "\t-h, --help      prints this help info and exit");
+        let _ = writeln!(output, "\t-V, --version   show version info and exit");
     }
-    if include_info {
-        println!("{}", info);
-    }
-    print!("{}", opts.usage(&brief));
 }
 
-fn redirect_to_file(outfile: &str) {
+fn version<W: std::io::Write>(output: &mut W) {
+    let _ = writeln!(output, "rewrite {}", env!("CARGO_PKG_VERSION"));
+    let _ = writeln!(
+        output,
+        "Copyright (C) NeoSmart Technologies 2017-2021. \
+        Written by Mahmoud Al-Qudsi <mqudsi@neosmart.net>"
+    );
+}
+
+fn redirect_to_file(outfile: &OsStr) {
     // Create the temporary file in the same directory as outfile. This lets us guarantee a rename
     // (instead of a move) upon completion where possible.
     let src = Path::new(outfile);
@@ -94,30 +103,56 @@ fn redirect_to_file(outfile: &str) {
 }
 
 fn main() {
-    let args: Vec<_> = env::args().collect();
-    let program = &args[0];
+    let args = std::env::args_os();
 
-    let mut opts = Options::new();
-    opts.optflag("h", "help", "prints this help info");
-    let matches = match opts.parse(&args[1..]) {
-        Ok(m) => m,
-        Err(e) => {
-            println!("{}", e);
-            print_usage(&program, opts, false, false);
-            return;
+    let mut file = None;
+    let mut skip_switches = false;
+    for arg_os in args.skip(1) {
+        if let Some(arg) = arg_os.to_str() {
+            if !skip_switches && arg.starts_with("-") && arg != "-" {
+                match arg {
+                    "-h" | "--help" => {
+                        help(&mut std::io::stdout(), true);
+                        std::process::exit(0);
+                    }
+                    "-V" | "--version" => {
+                        version(&mut std::io::stdout());
+                        std::process::exit(0);
+                    }
+                    // "--line-buffered" => {
+                    //     force_flush = true;
+                    // }
+                    "--" => {
+                        skip_switches = true;
+                        continue;
+                    }
+                    _ => {
+                        eprintln!("{}: Invalid option!\n", arg);
+                        help(&mut std::io::stderr(), false);
+                        eprintln!("Try 'rewrite --help' for more information");
+                        std::process::exit(-1);
+                    }
+                }
+            }
+        }
+
+        if file.replace(arg_os).is_some() {
+            // A destination was provided twice
+            eprintln!("Multiple output files provided!");
+            eprintln!("Try 'rewrite --help' for usage information");
+            std::process::exit(-1);
+        }
+    }
+
+    let file = match file {
+        Some(file) => file,
+        None => {
+            version(&mut std::io::stderr());
+            eprintln!("");
+            help(&mut std::io::stderr(), false);
+            std::process::exit(-1);
         }
     };
 
-    if matches.opt_present("h") {
-        print_usage(&program, opts, true, true);
-        return;
-    }
-
-    if matches.free.is_empty() {
-        print_usage(&program, opts, true, false);
-        return;
-    }
-
-    let infile = &matches.free[0];
-    redirect_to_file(infile);
+    redirect_to_file(&file);
 }
