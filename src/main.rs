@@ -8,8 +8,8 @@ macro_rules! except {
     ($error:ident, $extra:tt) => {{
         let stderr = std::io::stderr();
         let mut stderr = stderr.lock();
-        let _ = write!(&mut stderr, "{}\n", $extra);
-        let _ = write!(&mut stderr, "{}\n", $error);
+        let _ = writeln!(&mut stderr, "{}", $extra);
+        let _ = writeln!(&mut stderr, "{}", $error);
         std::process::exit(-1);
     }};
 }
@@ -127,7 +127,8 @@ fn main() {
                         continue;
                     }
                     _ => {
-                        eprintln!("{}: Invalid option!\n", arg);
+                        eprintln!("{}: Invalid option!", arg);
+                        eprintln!("");
                         help(&mut std::io::stderr(), false);
                         eprintln!("Try 'rewrite --help' for more information");
                         std::process::exit(-1);
