@@ -1,7 +1,7 @@
 [package]
 name = "rewrite"
 version = "1.0.0"
-authors = ["Mahmoud Al-Qudsi <mqudsi@neosmart.net>"]
+authors = ["Mahmoud Al-Qudsi <mqudsi@neosmart.net>", "NeoSmart Technologies"]
 description = "Safely rewrite file contents from stdin, even when file is open as an input."
 homepage = "https://github.com/neosmart/rewrite"
 repository = "https://github.com/neosmart/rewrite"
