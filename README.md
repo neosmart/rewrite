@@ -75,6 +75,10 @@ cargo install rewrite
 Pre-built binaries for Windows, Linux, FreeBSD, and OS X are available separately. Assistance
 packaging and distributing on platform-native package managers is welcome.
 
+# Dependencies
+
+As of version 1.0, `rewrite` is free of any dependencies (native or otherwise).
+
 # License
 
 `rewrite` is released to the general public without warranty in hopes of being useful under the
