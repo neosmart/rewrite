@@ -1,12 +1,12 @@
 [package]
 name = "rewrite"
-version = "0.2.0"
+version = "1.0.0"
 authors = ["Mahmoud Al-Qudsi <mqudsi@neosmart.net>"]
-description = "Safely rewrite file contents from stdin, even when file is input"
+description = "Safely rewrite file contents from stdin, even when file is open as an input."
 homepage = "https://github.com/neosmart/rewrite"
 repository = "https://github.com/neosmart/rewrite"
-readme = "readme.md"
-keywords = ["rewrite", "redirect", "in-place"]
+readme = "README.md"
+keywords = ["rewrite", "redirect", "in-place", "sponge"]
 categories = ["command-line-utilities", "text-processing", "os"]
 license = "MIT"
 edition = "2018"
